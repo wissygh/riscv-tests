@@ -1,6 +1,30 @@
 riscv-tests
 ================
 
+ISA test使用方法
+---------------
+
+    $ cd isa
+
+使用NEMU运行测试程序:
+
+    $ make nemu_run
+
+使用NOOP运行测试程序:
+
+    $ make noop_run
+
+指定测试程序集:
+
+    $ make noop_run SUITES=rv64ui
+
+运行未裁剪CSR指令的测试程序:
+
+    $ make noop_run ENV=p
+
+运行裁剪过CSR指令的测试程序:
+    $ make noop_run ENV=xs
+
 About
 -----------
 
