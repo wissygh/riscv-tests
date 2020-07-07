@@ -4,6 +4,8 @@
 
 XLEN ?= 64
 
+ENV = xs
+
 src_dir := .
 build_dir := build
 
@@ -48,7 +50,7 @@ default: all
 
 RISCV_PREFIX ?= riscv$(XLEN)-linux-gnu-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
-RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles
+RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -Wl,--build-id=none
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes
 RISCV_OBJCOPY ?= $(RISCV_PREFIX)objcopy
 RISCV_SIM ?= spike
@@ -70,10 +72,18 @@ vpath %.S $(src_dir)
 %.out32: %
 	$(RISCV_SIM) --isa=rv32gc_zfh_zicboz_svnapot_zicntr_zba_zbb_zbc_zbs --misaligned $< 2> $@
 
+%.nemu-log: %.bin
+	make -C $(NEMU_HOME) ISA=riscv64 run ARGS="--batch --log=$(abspath $(build_dir)/$@) $(abspath $(build_dir)/$<)"
+
+%.noop-log: %.bin
+	make -C $(NOOP_HOME) emu IMAGE="$(abspath $(build_dir)/$<)" 2>&1 | tee > $(abspath $(build_dir)/$@)
+	cat $(build_dir)/$@ | grep "HIT GOOD TRAP"
+	
+
 define compile_template
 
 $$($(1)_p_tests): $(1)-p-%: $(1)/%.S
-	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(src_dir)/../env/xs -I$(src_dir)/macros/scalar -T$(src_dir)/../env/xs/link.ld $$< -o $$(build_dir)/$$@
+	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(src_dir)/../env/$(ENV) -I$(src_dir)/macros/scalar -T$(src_dir)/../env/$(ENV)/link.ld $$< -o $$(build_dir)/$$@
 $(1)_tests += $$($(1)_p_tests)
 
 # $$($(1)_v_tests): $(1)-v-%: $(1)/%.S
@@ -126,13 +136,24 @@ $(eval $(call compile_template,rv64ssvnapot,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
 endif
 
+SUITES = rv64ui
+
+$(foreach s, $(SUITES), $(eval $(call compile_template,$(s),-march=rv64g -mabi=lp64)) )
+
 tests_dump = $(addsuffix .dump, $(tests))
 tests_bin = $(addsuffix .bin, $(tests))
 tests_hex = $(addsuffix .hex, $(tests))
 tests_out = $(addsuffix .out, $(filter rv64%,$(tests)))
 tests32_out = $(addsuffix .out32, $(filter rv32%,$(tests)))
 
+nemu_out = $(addsuffix .nemu-log, $(tests))
+noop_out = $(addsuffix .noop-log, $(tests))
+
 run: $(tests_out) $(tests32_out)
+
+nemu_run: $(tests_dump) $(tests_bin) $(nemu_out)
+
+noop_run: $(tests_dump) $(tests_bin) $(noop_out)
 
 junk = $(build_dir)
 
