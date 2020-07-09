@@ -64,9 +64,7 @@ vpath %.S $(src_dir)
 	make -C $(NEMU_HOME) ISA=riscv64 run ARGS="--batch --log=$(abspath $(build_dir)/$@) $(abspath $(build_dir)/$<)"
 
 %.noop-log: %.bin
-	make -C $(NOOP_HOME) emu IMAGE="$(abspath $(build_dir)/$<)" 2>&1 | tee > $(abspath $(build_dir)/$@)
-	cat $(build_dir)/$@ | grep "HIT GOOD TRAP"
-	
+	make -C $(NOOP_HOME) emu IMAGE="$(abspath $(build_dir)/$<)" 	
 
 define compile_template
 
