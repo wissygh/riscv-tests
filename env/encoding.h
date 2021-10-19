@@ -176,6 +176,8 @@
 #define PTE_A     0x040 /* Accessed */
 #define PTE_D     0x080 /* Dirty */
 #define PTE_SOFT  0x300 /* Reserved for Software */
+#define PTE_N     0x8000000000000000
+#define PTE_PBMT_TWO     0x4000000000000000
 
 #define PTE_PPN_SHIFT 10
 
