@@ -17,6 +17,8 @@
 RVTEST_RV64M
 RVTEST_CODE_BEGIN
 
+1:
+
   # Turn on VM
   li a0, (SATP_MODE & ~(SATP_MODE<<1)) * SATP_MODE_SV39
   la a1, page_table_1

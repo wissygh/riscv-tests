@@ -4,7 +4,7 @@
 
 XLEN ?= 64
 
-ENV = xs
+ENV ?= xs
 
 src_dir := .
 build_dir := build
@@ -76,7 +76,7 @@ vpath %.S $(src_dir)
 	make -C $(NEMU_HOME) ISA=riscv64 run ARGS="--batch --log=$(abspath $(build_dir)/$@) $(abspath $(build_dir)/$<)"
 
 %.noop-log: %.bin
-	make -C $(NOOP_HOME) emu IMAGE="$(abspath $(build_dir)/$<)" 	
+	make -C $(NOOP_HOME) emu IMAGE="$(abspath $(build_dir)/$<)"
 
 define compile_template
 
@@ -134,7 +134,7 @@ $(eval $(call compile_template,rv64ssvnapot,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
 endif
 
-SUITES = rv64ui
+SUITES = rv64mi rv64si rv64ua rv64ui rv64um rv64uc rv64uf rv64ud
 
 $(foreach s, $(SUITES), $(eval $(call compile_template,$(s),-march=rv64g -mabi=lp64)) )
 
@@ -148,6 +148,8 @@ nemu_out = $(addsuffix .nemu-log, $(tests))
 noop_out = $(addsuffix .noop-log, $(tests))
 
 run: $(tests_out) $(tests32_out)
+
+bin: $(tests_dump) $(tests_bin)
 
 nemu_run: $(tests_dump) $(tests_bin) $(nemu_out)
 
