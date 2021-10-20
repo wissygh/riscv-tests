@@ -4,6 +4,7 @@
 
 rv64mi_sc_tests = \
 	access \
+	asid \
 	breakpoint \
 	csr \
 	mcsr \
@@ -20,6 +21,8 @@ rv64mi_sc_tests = \
 	sd-misaligned \
 	zicntr \
 	svinval \
-	pbmt \
+ 	pbmt \
+
+
 
 rv64mi_p_tests = $(addprefix rv64mi-p-, $(rv64mi_sc_tests))

@@ -51,7 +51,7 @@ default: all
 RISCV_PREFIX ?= riscv$(XLEN)-linux-gnu-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -Wl,--build-id=none
-RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes
+RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump --disassemble-all
 RISCV_OBJCOPY ?= $(RISCV_PREFIX)objcopy
 RISCV_SIM ?= spike
 
