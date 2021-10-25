@@ -69,6 +69,8 @@ RVTEST_CODE_BEGIN
   ori a1, a1, (PTE_V | PTE_R | PTE_W | PTE_A | PTE_D)
   sd a1, 8(a0)
 
+  fence
+
   # set MPP
   li a0, MSTATUS_MPP
   csrc mstatus, a0  
