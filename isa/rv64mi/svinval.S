@@ -200,6 +200,7 @@ test_begin:
   bne a0, a1, die
 
   csrw 0x5c4, x0 // clear svinval csr
+  fence // flush pipe
 
   li gp, 5
   li tp, 1
