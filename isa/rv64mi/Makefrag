@@ -15,6 +15,7 @@ rv64mi_sc_tests = \
 	sbreak \
 	svinval \
  	pbmt \
+	xret_clear_mprv \
 
 
 
