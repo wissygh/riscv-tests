@@ -36,6 +36,8 @@ bmarks = \
 	vec-daxpy \
 	vec-sgemm \
 	vec-strcmp \
+	pmp-modified \
+	pma \
 
 #--------------------------------------------------------------------
 # Build rules
@@ -48,6 +50,7 @@ RISCV_LINK ?= $(RISCV_GCC) -T $(src_dir)/common/test.ld $(incs)
 RISCV_LINK_OPTS ?= -static -nostdlib -nostartfiles -lm -lgcc -T $(src_dir)/common/test.ld
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data
 RISCV_SIM ?= spike --isa=rv$(XLEN)gcv
+RISCV_OBJCOPY ?= $(RISCV_PREFIX)objcopy -O binary
 
 incs  += -I$(src_dir)/../env -I$(src_dir)/common $(addprefix -I$(src_dir)/, $(bmarks))
 objs  :=
@@ -65,17 +68,21 @@ $(foreach bmark,$(bmarks),$(eval $(call compile_template,$(bmark))))
 bmarks_riscv_bin  = $(addsuffix .riscv,  $(bmarks))
 bmarks_riscv_dump = $(addsuffix .riscv.dump, $(bmarks))
 bmarks_riscv_out  = $(addsuffix .riscv.out,  $(bmarks))
+bmarks_riscv_binary = $(addsuffix .bin, $(bmarks))
 
 $(bmarks_riscv_dump): %.riscv.dump: %.riscv
 	$(RISCV_OBJDUMP) $< > $@
 
+$(bmarks_riscv_binary): %.bin: %.riscv
+	$(RISCV_OBJCOPY) $< > $@
+
 $(bmarks_riscv_out): %.riscv.out: %.riscv
 	$(RISCV_SIM) $< > $@
 
-riscv: $(bmarks_riscv_dump)
+riscv: $(bmarks_riscv_dump) $(bmarks_riscv_binary)
 run: $(bmarks_riscv_out)
 
-junk += $(bmarks_riscv_bin) $(bmarks_riscv_dump) $(bmarks_riscv_hex) $(bmarks_riscv_out)
+junk += $(bmarks_riscv_bin) $(bmarks_riscv_dump) $(bmarks_riscv_hex) $(bmarks_riscv_out) $(bmarks_riscv_binary)
 
 #------------------------------------------------------------
 # Default
