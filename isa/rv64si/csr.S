@@ -75,7 +75,7 @@ RVTEST_CODE_BEGIN
   fmv.s.x f0, x0
   csrc mstatus, a1
   la a1, fsw_data
-  TEST_CASE(13, a0, 1, fsw f0, (a1); lw a0, (a1));
+  # TEST_CASE(13, a0, 1, fsw f0, (a1); lw a0, (a1)); # disable float EX_II check when FS=0
 #else
   # Fail if this test is compiled without F but executed on a core with F.
   TEST_CASE(13, zero, 1)
