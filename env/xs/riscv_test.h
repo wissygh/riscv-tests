@@ -169,12 +169,14 @@ _start:                                                                 \
 trap_vector:                                                            \
         /* test whether the test came from pass/fail */                 \
         csrr t5, mcause;                                                \
+        /* We don't use ecall to print the results of tests             \
         li t6, CAUSE_USER_ECALL;                                        \
         beq t5, t6, write_tohost;                                       \
         li t6, CAUSE_SUPERVISOR_ECALL;                                  \
         beq t5, t6, write_tohost;                                       \
         li t6, CAUSE_MACHINE_ECALL;                                     \
         beq t5, t6, write_tohost;                                       \
+        */                                                              \
         /* if an mtvec_handler is defined, jump to it */                \
         la t5, mtvec_handler;                                           \
         beqz t5, 1f;                                                    \
