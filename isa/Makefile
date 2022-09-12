@@ -36,7 +36,7 @@ default: all
 # Build rules
 #--------------------------------------------------------------------
 
-RISCV_PREFIX ?= riscv$(XLEN)-linux-gnu-
+RISCV_PREFIX ?= riscv$(XLEN)-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -Wl,--build-id=none
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump --disassemble-all
