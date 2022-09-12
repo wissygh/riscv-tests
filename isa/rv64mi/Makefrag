@@ -23,6 +23,7 @@ rv64mi_sc_tests = \
 	svinval \
  	pbmt \
 	xret_clear_mprv \
+	xtvec \
 
 
 
