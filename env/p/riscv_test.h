@@ -110,16 +110,16 @@
 #define INIT_SATP                                                      \
   la t0, 1f;                                                            \
   csrw mtvec, t0;                                                       \
-  csrwi sptbr, 0;                                                       \
+  csrwi satp, 0;                                                       \
   .align 2;                                                             \
 1:
 
 #define DELEGATE_NO_TRAPS                                               \
+  csrwi mie, 0;                                                         \
   la t0, 1f;                                                            \
   csrw mtvec, t0;                                                       \
   csrwi medeleg, 0;                                                     \
   csrwi mideleg, 0;                                                     \
-  csrwi mie, 0;                                                         \
   .align 2;                                                             \
 1:
 
@@ -190,6 +190,7 @@ handle_exception:                                                       \
   1:    ori TESTNUM, TESTNUM, 1337;                                     \
   write_tohost:                                                         \
         sw TESTNUM, tohost, t5;                                         \
+        sw zero, tohost + 4, t5;                                        \
         j write_tohost;                                                 \
 reset_vector:                                                           \
         INIT_XREG;                                                      \
@@ -212,7 +213,6 @@ reset_vector:                                                           \
                (1 << CAUSE_USER_ECALL) |                                \
                (1 << CAUSE_BREAKPOINT);                                 \
         csrw medeleg, t0;                                               \
-        csrr t1, medeleg;                                               \
 1:      csrwi mstatus, 0;                                               \
         init;                                                           \
         EXTRA_INIT;                                                     \
@@ -227,22 +227,29 @@ reset_vector:                                                           \
 // End Macro
 //-----------------------------------------------------------------------
 
-#define NEMU_TRAP(code)                                                 \
-        li a0, code;                                                    \
-        .word 0x0000006b
-
 #define RVTEST_CODE_END                                                 \
-        NEMU_TRAP(0)
+        unimp
+
 //-----------------------------------------------------------------------
 // Pass/Fail Macro
 //-----------------------------------------------------------------------
 
 #define RVTEST_PASS                                                     \
-        NEMU_TRAP(0)
+        fence;                                                          \
+        li TESTNUM, 1;                                                  \
+        li a7, 93;                                                      \
+        li a0, 0;                                                       \
+        ecall
 
 #define TESTNUM gp
 #define RVTEST_FAIL                                                     \
-        NEMU_TRAP(1)
+        fence;                                                          \
+1:      beqz TESTNUM, 1b;                                               \
+        sll TESTNUM, TESTNUM, 1;                                        \
+        or TESTNUM, TESTNUM, 1;                                         \
+        li a7, 93;                                                      \
+        addi a0, TESTNUM, 0;                                            \
+        ecall
 
 //-----------------------------------------------------------------------
 // Data Section Macro
@@ -253,8 +260,8 @@ reset_vector:                                                           \
 #define RVTEST_DATA_BEGIN                                               \
         EXTRA_DATA                                                      \
         .pushsection .tohost,"aw",@progbits;                            \
-        .align 6; .global tohost; tohost: .dword 0;                     \
-        .align 6; .global fromhost; fromhost: .dword 0;                 \
+        .align 6; .global tohost; tohost: .dword 0; .size tohost, 8;    \
+        .align 6; .global fromhost; fromhost: .dword 0; .size fromhost, 8;\
         .popsection;                                                    \
         .align 4; .global begin_signature; begin_signature:
 
