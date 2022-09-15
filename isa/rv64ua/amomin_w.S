@@ -41,6 +41,42 @@ RVTEST_CODE_BEGIN
 
   TEST_CASE(7, a5, 0xffffffff80000000, lw a5, 0(a3))
 
+  TEST_CASE(8, a4, 0xffffffff80000000, \
+    li a0, 0x80000000; \
+    li a1, 0x7fffffff; \
+    la a3, amo_operand; \
+    sd a0, 0(a3); \
+    amomin.w a4, a1, 0(a3); \
+  )
+  TEST_CASE(9, a5, 0xffffffff80000000, lw a5, 0(a3))
+
+  TEST_CASE(10, a4, 0x7fffffff, \
+    li a0, 0x7fffffff; \
+    li a1, 0x80000000; \
+    la a3, amo_operand; \
+    sd a0, 0(a3); \
+    amomin.w a4, a1, 0(a3); \
+  )
+  TEST_CASE(11, a5, 0xffffffff80000000, lw a5, 0(a3))
+
+  TEST_CASE(12, a4, 0x07eeeeeee, \
+    li a0, 0x207eeeeeee; \
+    li a1, 0x107fffffff; \
+    la a3, amo_operand; \
+    sd a0, 0(a3); \
+    amomin.w a4, a1, 0(a3); \
+  )
+  TEST_CASE(13, a5, 0x7eeeeeee, lw a5, 0(a3))
+
+  TEST_CASE(14, a4, 0x07fffffff, \
+    li a0, 0x107fffffff; \
+    li a1, 0x207eeeeeee; \
+    la a3, amo_operand; \
+    sd a0, 0(a3); \
+    amomin.w a4, a1, 0(a3); \
+  )
+  TEST_CASE(15, a5, 0x7eeeeeee, lw a5, 0(a3))
+
   TEST_PASSFAIL
 
 RVTEST_CODE_END
