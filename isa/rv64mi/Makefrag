@@ -13,6 +13,7 @@ rv64mi_sc_tests = \
 	ma_addr \
 	scall \
 	sbreak \
+	sfence \
 	svinval \
  	pbmt \
 	xret_clear_mprv \
