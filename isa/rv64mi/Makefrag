@@ -20,6 +20,7 @@ rv64mi_sc_tests = \
 	sw-misaligned \
 	sd-misaligned \
 	zicntr \
+	sfence \
 	svinval \
  	pbmt \
 	xret_clear_mprv \
