@@ -18,8 +18,11 @@ include $(src_dir)/rv64um/Makefrag
 include $(src_dir)/rv64ua/Makefrag
 include $(src_dir)/rv64uf/Makefrag
 include $(src_dir)/rv64ud/Makefrag
+include $(src_dir)/rv64uzfh/Makefrag
 include $(src_dir)/rv64si/Makefrag
+include $(src_dir)/rv64ssvnapot/Makefrag
 include $(src_dir)/rv64mi/Makefrag
+include $(src_dir)/rv64mzicbo/Makefrag
 endif
 include $(src_dir)/rv32ui/Makefrag
 include $(src_dir)/rv32uc/Makefrag
@@ -27,6 +30,7 @@ include $(src_dir)/rv32um/Makefrag
 include $(src_dir)/rv32ua/Makefrag
 include $(src_dir)/rv32uf/Makefrag
 include $(src_dir)/rv32ud/Makefrag
+include $(src_dir)/rv32uzfh/Makefrag
 include $(src_dir)/rv32si/Makefrag
 include $(src_dir)/rv32mi/Makefrag
 
@@ -55,10 +59,10 @@ vpath %.S $(src_dir)
 	$(RISCV_OBJCOPY) -O binary $(build_dir)/$< $(build_dir)/$@
 
 %.out: %
-	$(RISCV_SIM) --isa=rv64gc $< 2> $@
+	$(RISCV_SIM) --isa=rv64gc_zfh_zicboz_svnapot_zicntr --misaligned $< 2> $@
 
 %.out32: %
-	$(RISCV_SIM) --isa=rv32gc $< 2> $@
+	$(RISCV_SIM) --isa=rv32gc_zfh_zicboz_svnapot_zicntr --misaligned $< 2> $@
 
 %.nemu-log: %.bin
 	make -C $(NEMU_HOME) ISA=riscv64 run ARGS="--batch --log=$(abspath $(build_dir)/$@) $(abspath $(build_dir)/$<)"
@@ -83,7 +87,11 @@ $(1): $$($(1)_tests_dump) $$($(1)_tests_bin)
 
 .PHONY: $(1)
 
+COMPILER_SUPPORTS_$(1) := $$(shell $$(RISCV_GCC) $(2) -c -x c /dev/null -o /dev/null 2> /dev/null; echo $$$$?)
+
+ifeq ($$(COMPILER_SUPPORTS_$(1)),0)
 tests += $$($(1)_tests)
+endif
 
 endef
 
@@ -135,12 +143,18 @@ $(foreach s, $(SUITES), $(eval $(call compile_template,$(s),-march=rv64g -mabi=l
 # $(eval $(call compile_template,rv64si,-march=rv64g -mabi=lp64))
 # $(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
 
+$(eval $(call compile_template,rv32uzfh,-march=rv32g_zfh -mabi=ilp32))
+ifeq ($(XLEN),64)
+$(eval $(call compile_template,rv64uzfh,-march=rv64g_zfh -mabi=lp64))
+$(eval $(call compile_template,rv64mzicbo,-march=rv64g_zicboz -mabi=lp64))
+$(eval $(call compile_template,rv64ssvnapot,-march=rv64g -mabi=lp64))
+endif
 
 tests_dump = $(addsuffix .dump, $(tests))
 tests_bin = $(addsuffix .bin, $(tests))
 tests_hex = $(addsuffix .hex, $(tests))
-tests_out = $(addsuffix .out, $(spike_tests))
-tests32_out = $(addsuffix .out32, $(spike32_tests))
+tests_out = $(addsuffix .out, $(filter rv64%,$(tests)))
+tests32_out = $(addsuffix .out32, $(filter rv32%,$(tests)))
 
 nemu_out = $(addsuffix .nemu-log, $(tests))
 noop_out = $(addsuffix .noop-log, $(tests))

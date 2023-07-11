@@ -53,8 +53,10 @@ int main()
 
     volatile int i = 0;
     int j = 0;
-    char fox[] = "The quick brown fox jumps of the lazy dog.";
+    char *fox = "The quick brown fox jumps of the lazy dog.";
     unsigned int checksum = 0;
+    volatile uint32_t i32 = 0xdeadbeef;
+    volatile uint64_t i64 = 0x1122334455667788;
 
 start:
     while (i)

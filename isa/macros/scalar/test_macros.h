@@ -12,9 +12,9 @@
 
 #define TEST_CASE( testnum, testreg, correctval, code... ) \
 test_ ## testnum: \
+    li  TESTNUM, testnum; \
     code; \
     li  x7, MASK_XLEN(correctval); \
-    li  TESTNUM, testnum; \
     bne testreg, x7, fail;
 
 # We use a macro hack to simpify code generation for various numbers
@@ -217,6 +217,7 @@ test_ ## testnum: \
 
 #define TEST_LD_OP( testnum, inst, result, offset, base ) \
     TEST_CASE( testnum, x14, result, \
+      li  x15, result; /* Tell the exception handler the expected result. */ \
       la  x1, base; \
       inst x14, offset(x1); \
     )
@@ -225,8 +226,14 @@ test_ ## testnum: \
     TEST_CASE( testnum, x14, result, \
       la  x1, base; \
       li  x2, result; \
+      la  x15, 7f; /* Tell the exception handler how to skip this test. */ \
       store_inst x2, offset(x1); \
       load_inst x14, offset(x1); \
+      j 8f; \
+7:    \
+      /* Set up the correct result for TEST_CASE(). */ \
+      mv x14, x2; \
+8:    \
     )
 
 #define TEST_LD_DEST_BYPASS( testnum, nop_cycles, inst, result, offset, base ) \
@@ -374,10 +381,34 @@ test_ ## testnum: \
 # Tests floating-point instructions
 #-----------------------------------------------------------------------
 
+#define qNaNh 0h:7e00
+#define sNaNh 0h:7c01
 #define qNaNf 0f:7fc00000
 #define sNaNf 0f:7f800001
 #define qNaN 0d:7ff8000000000000
 #define sNaN 0d:7ff0000000000001
+
+#define TEST_FP_OP_H_INTERNAL( testnum, flags, result, val1, val2, val3, code... ) \
+test_ ## testnum: \
+  li  TESTNUM, testnum; \
+  la  a0, test_ ## testnum ## _data ;\
+  flh f0, 0(a0); \
+  flh f1, 2(a0); \
+  flh f2, 4(a0); \
+  lh  a3, 6(a0); \
+  code; \
+  fsflags a1, x0; \
+  li a2, flags; \
+  bne a0, a3, fail; \
+  bne a1, a2, fail; \
+  .pushsection .data; \
+  .align 1; \
+  test_ ## testnum ## _data: \
+  .float16 val1; \
+  .float16 val2; \
+  .float16 val3; \
+  .result; \
+  .popsection
 
 #define TEST_FP_OP_S_INTERNAL( testnum, flags, result, val1, val2, val3, code... ) \
 test_ ## testnum: \
@@ -460,6 +491,19 @@ test_ ## testnum: \
   TEST_FP_OP_S_INTERNAL( testnum, 0, float result, val1, 0.0, 0.0, \
                     fcvt.d.s f3, f0; fcvt.s.d f3, f3; fmv.x.s a0, f3)
 
+#define TEST_FCVT_H_S( testnum, result, val1 ) \
+  TEST_FP_OP_H_INTERNAL( testnum, 0, float16 result, val1, 0.0, 0.0, \
+                    fcvt.s.h f3, f0; fcvt.h.s f3, f3; fmv.x.h a0, f3)
+
+#define TEST_FCVT_H_D( testnum, result, val1 ) \
+  TEST_FP_OP_H_INTERNAL( testnum, 0, float16 result, val1, 0.0, 0.0, \
+                    fcvt.d.h f3, f0; fcvt.h.d f3, f3; fmv.x.h a0, f3)
+
+
+#define TEST_FP_OP1_H( testnum, inst, flags, result, val1 ) \
+  TEST_FP_OP_H_INTERNAL( testnum, flags, float16 result, val1, 0.0, 0.0, \
+                    inst f3, f0; fmv.x.h a0, f3;)
+
 #define TEST_FP_OP1_S( testnum, inst, flags, result, val1 ) \
   TEST_FP_OP_S_INTERNAL( testnum, flags, float result, val1, 0.0, 0.0, \
                     inst f3, f0; fmv.x.s a0, f3)
@@ -477,6 +521,10 @@ test_ ## testnum: \
   TEST_FP_OP_S_INTERNAL( testnum, flags, dword result, val1, 0.0, 0.0, \
                     inst f3, f0; fmv.x.s a0, f3)
 
+#define TEST_FP_OP1_H_DWORD_RESULT( testnum, inst, flags, result, val1 ) \
+  TEST_FP_OP_H_INTERNAL( testnum, flags, word result, val1, 0.0, 0.0, \
+                    inst f3, f0; fmv.x.h a0, f3)
+
 #define TEST_FP_OP1_D32_DWORD_RESULT( testnum, inst, flags, result, val1 ) \
   TEST_FP_OP_D32_INTERNAL( testnum, flags, dword result, val1, 0.0, 0.0, \
                     inst f3, f0; fsd f3, 0(a0); lw t2, 4(a0); lw a0, 0(a0))
@@ -489,6 +537,10 @@ test_ ## testnum: \
 #define TEST_FP_OP2_S( testnum, inst, flags, result, val1, val2 ) \
   TEST_FP_OP_S_INTERNAL( testnum, flags, float result, val1, val2, 0.0, \
                     inst f3, f0, f1; fmv.x.s a0, f3)
+
+#define TEST_FP_OP2_H( testnum, inst, flags, result, val1, val2 ) \
+  TEST_FP_OP_H_INTERNAL( testnum, flags, float16 result, val1, val2, 0.0, \
+                    inst f3, f0, f1; fmv.x.h a0, f3)
 
 #define TEST_FP_OP2_D32( testnum, inst, flags, result, val1, val2 ) \
   TEST_FP_OP_D32_INTERNAL( testnum, flags, double result, val1, val2, 0.0, \
@@ -503,6 +555,10 @@ test_ ## testnum: \
   TEST_FP_OP_S_INTERNAL( testnum, flags, float result, val1, val2, val3, \
                     inst f3, f0, f1, f2; fmv.x.s a0, f3)
 
+#define TEST_FP_OP3_H( testnum, inst, flags, result, val1, val2, val3 ) \
+  TEST_FP_OP_H_INTERNAL( testnum, flags, float16 result, val1, val2, val3, \
+                    inst f3, f0, f1, f2; fmv.x.h a0, f3)
+
 #define TEST_FP_OP3_D32( testnum, inst, flags, result, val1, val2, val3 ) \
   TEST_FP_OP_D32_INTERNAL( testnum, flags, double result, val1, val2, val3, \
                     inst f3, f0, f1, f2; fsd f3, 0(a0); lw t2, 4(a0); lw a0, 0(a0))
@@ -516,6 +572,10 @@ test_ ## testnum: \
   TEST_FP_OP_S_INTERNAL( testnum, flags, word result, val1, 0.0, 0.0, \
                     inst a0, f0, rm)
 
+#define TEST_FP_INT_OP_H( testnum, inst, flags, result, val1, rm ) \
+  TEST_FP_OP_H_INTERNAL( testnum, flags, word result, val1, 0.0, 0.0, \
+                    inst a0, f0, rm)
+
 #define TEST_FP_INT_OP_D32( testnum, inst, flags, result, val1, rm ) \
   TEST_FP_OP_D32_INTERNAL( testnum, flags, dword result, val1, 0.0, 0.0, \
                     inst a0, f0, f1; li t2, 0)
@@ -526,6 +586,10 @@ test_ ## testnum: \
 
 #define TEST_FP_CMP_OP_S( testnum, inst, flags, result, val1, val2 ) \
   TEST_FP_OP_S_INTERNAL( testnum, flags, word result, val1, val2, 0.0, \
+                    inst a0, f0, f1)
+
+#define TEST_FP_CMP_OP_H( testnum, inst, flags, result, val1, val2 ) \
+  TEST_FP_OP_H_INTERNAL( testnum, flags, hword result, val1, val2, 0.0, \
                     inst a0, f0, f1)
 
 #define TEST_FP_CMP_OP_D32( testnum, inst, flags, result, val1, val2 ) \
@@ -569,6 +633,22 @@ test_ ## testnum: \
   .align 2; \
   test_ ## testnum ## _data: \
   .float result; \
+  .popsection
+
+#define TEST_INT_FP_OP_H( testnum, inst, result, val1 ) \
+test_ ## testnum: \
+  li  TESTNUM, testnum; \
+  la  a0, test_ ## testnum ## _data ;\
+  lh  a3, 0(a0); \
+  li  a0, val1; \
+  inst f0, a0; \
+  fsflags x0; \
+  fmv.x.h a0, f0; \
+  bne a0, a3, fail; \
+  .pushsection .data; \
+  .align 1; \
+  test_ ## testnum ## _data: \
+  .float16 result; \
   .popsection
 
 #define TEST_INT_FP_OP_D32( testnum, inst, result, val1 ) \
@@ -627,6 +707,30 @@ test_ ## testnum: \
     .popsection
 
 // ^ x14 is used in some other macros, to avoid issues we use x15 for upper word
+
+#define MISALIGNED_LOAD_HANDLER \
+  li t0, CAUSE_MISALIGNED_LOAD; \
+  csrr t1, mcause; \
+  bne t0, t1, fail; \
+  \
+  /* We got a misaligned exception. Pretend we handled it in software */ \
+  /* by loading the correct result here. */ \
+  mv  a4, a5; \
+  \
+  /* And skip this instruction */ \
+  csrr t0, mepc; \
+  addi t0, t0, 4; \
+  csrw mepc, t0; \
+  mret
+
+#define MISALIGNED_STORE_HANDLER \
+  li t0, CAUSE_MISALIGNED_STORE; \
+  csrr t1, mcause; \
+  bne t0, t1, fail; \
+  \
+  /* We got a misaligned exception. Skip this test. */ \
+  csrw mepc, x15; \
+  mret
 
 #-----------------------------------------------------------------------
 # Pass and fail code (assumes test num is in TESTNUM)

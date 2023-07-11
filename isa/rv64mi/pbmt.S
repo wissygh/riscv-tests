@@ -28,7 +28,7 @@ RVTEST_CODE_BEGIN
 
   # attributes
   sll a0, a0, PTE_PPN_SHIFT
-  li a1, PTE_V | PTE_R | PTE_W | PTE_X | PTE_A | PTE_D | PTE_N | PTE_PBMT_TWO
+  li a1, PTE_V | PTE_R | PTE_W | PTE_X | PTE_A | PTE_D | PTE_N | PBMT_IO
   or a0, a0, a1
 
   # Level 0 PTE address
