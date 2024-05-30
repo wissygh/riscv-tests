@@ -13,5 +13,8 @@ rv64si_sc_tests = \
 	satp_ppn \
 	immio \
 	immio-af \
+	debugCsrEXII \
+	triggerCsrEXII \
+		
 
 rv64si_p_tests = $(addprefix rv64si-p-, $(rv64si_sc_tests))

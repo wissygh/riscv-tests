@@ -209,6 +209,7 @@ reset_vector:                                                           \
         csrw stvec, t0;                                                 \
         li t0, (1 << CAUSE_LOAD_PAGE_FAULT) |                           \
                (1 << CAUSE_STORE_PAGE_FAULT) |                          \
+               (1 << CAUSE_ILLEGAL_INSTRUCTION) |                       \
                (1 << CAUSE_FETCH_PAGE_FAULT) |                          \
                (1 << CAUSE_MISALIGNED_FETCH) |                          \
                (1 << CAUSE_USER_ECALL) |                                \

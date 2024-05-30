@@ -25,6 +25,9 @@ rv64mi_sc_tests = \
  	pbmt \
 	xret_clear_mprv \
 	xtvec \
+	trigger \
+	loadTrigger \
+	debugCsrEXII \
 
 
 

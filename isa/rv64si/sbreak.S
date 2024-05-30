@@ -32,12 +32,12 @@ do_break:
   TEST_PASSFAIL
 
   .align 2
-  .global stvec_handler
-stvec_handler:
+  .global mtvec_handler
+mtvec_handler:
   li t1, CAUSE_BREAKPOINT
-  csrr t0, scause
+  csrr t0, mcause
   # Check if CLIC mode
-  csrr t2, stvec
+  csrr t2, mtvec
   andi t2, t2, 2
   # Skip masking if non-CLIC mode
   beqz t2, skip_mask 
@@ -45,7 +45,7 @@ stvec_handler:
 skip_mask:
   bne t0, t1, fail
   la t1, do_break
-  csrr t0, sepc
+  csrr t0, mepc
   bne t0, t1, fail
   j pass
 
